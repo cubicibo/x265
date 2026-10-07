@@ -542,7 +542,7 @@ frame counts) are only applicable to the CLI application.
 
 .. option:: --fps <integer|float|numerator/denominator>
 
-	YUV only: Source frame rate
+	YUV only: Output frame rate
 
 	**Range of values:** positive int or float, or num/denom
 
@@ -2537,6 +2537,13 @@ VUI fields must be manually specified.
 	Set the picture structure and emits it in the picture timing SEI message.
 	Values in the range 0..12. See D.3.3 of the HEVC spec. for a detailed explanation.
 
+.. option:: --prepulldown-fps <integer|float|numerator/denominator>
+
+	Specify the input content framerate, if it is smaller than the output frame rate.
+	x265 will perform adaptive soft pulldown to attain the target rate. Default disabled
+
+	The --fps to --prepulldown-fps ratio shall not exceed 3. It can be fractional or a real number.
+
 .. option:: --psfile <filename>
 
 	Specify a text file which contains the picture structure for some or all frames.
@@ -2547,7 +2554,8 @@ VUI fields must be manually specified.
 	Framefieldcoding shall be 0, 1, 2 (progressive, bottom-first or top-first, resp.),
 	It shall not change for an encoded sequence and match the encoder configuration.
 
-	Picstruct is the picture structure to use in the framenumber's Picture Timing SEI.
+	Picstruct is the structure to specify in the framenumber's Picture Timing SEI.
+	It shall be compatible with the encoder configuration for the given sequence.
 
 .. option:: --video-signal-type-preset <string>
 

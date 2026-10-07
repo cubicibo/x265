@@ -456,6 +456,10 @@ void x265_param_default(x265_param* param)
     param->foveaDelta    = 0.0f;   /* 0 = foveation disabled */
     param->foveaSigma    = 0.0f;   /* 0 = auto (95px) */
     param->foveaGazeFile = NULL;
+
+    /* prepulldown-fps */
+    param->fpsPrePulldownNum = 0;
+    param->fpsPrePulldownDenom = 0;
 }
 
 int x265_param_default_preset(x265_param* param, const char* preset, const char* tune)
@@ -784,7 +788,6 @@ int x265_scenecut_aware_qp_param_parse(x265_param* p, const char* name, const ch
     return bError ? X265_PARAM_BAD_VALUE : 0;
 }
 
-
 /* internal versions of string-to-int with additional error checking */
 #undef atoi
 #undef atof
@@ -924,6 +927,24 @@ int x265_zone_param_parse(x265_param* p, const char* name, const char* value)
 #define atof(str) x265_atof(str, bError)
 #define atobool(str) (bNameWasBool = true, x265_atobool(str, bError))
 
+#define x265_parse_fps(value, num, denom)          \
+    if (sscanf(value, "%u/%u", num, denom) == 2);  \
+    else                                           \
+    {                                              \
+        float fps = (float)atof(value);            \
+        if (fps > 0 && fps <= INT_MAX / 1000 && ceilf(fps) != floorf(fps))\
+        {                                          \
+            *num = (int)(fps * 1000 + .5);         \
+            *denom = 1000;                         \
+        }                                          \
+        else                                       \
+        {                                          \
+            *num = atoi(value);                    \
+            *denom = 1;                            \
+        }                                          \
+    }
+
+
 int x265_param_parse(x265_param* p, const char* name, const char* value)
 {
     bool bError = false;
@@ -1015,22 +1036,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
     }
     OPT("fps")
     {
-        if (sscanf(value, "%u/%u", &p->fpsNum, &p->fpsDenom) == 2)
-            ;
-        else
-        {
-            float fps = (float)atof(value);
-            if (fps > 0 && fps <= INT_MAX / 1000 && ceilf(fps) != floorf(fps))
-            {
-                p->fpsNum = (int)(fps * 1000 + .5);
-                p->fpsDenom = 1000;
-            }
-            else
-            {
-                p->fpsNum = atoi(value);
-                p->fpsDenom = 1;
-            }
-        }
+        x265_parse_fps(value, &p->fpsNum, &p->fpsDenom);
     }
     OPT("frame-threads") p->frameNumThreads = atoi(value);
     OPT("pmode") p->bDistributeModeAnalysis = atobool(value);
@@ -1563,6 +1569,10 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
             }
             else
                 bError = true;
+        }
+        OPT("prepulldown-fps")
+        {
+            x265_parse_fps(value, &p->fpsPrePulldownNum, &p->fpsPrePulldownDenom);
         }
         OPT("fovea-delta") p->foveaDelta = (float)atof(value);
         OPT("fovea-sigma") p->foveaSigma = (float)atof(value);
@@ -3116,6 +3126,9 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     dst->foveaDelta    = src->foveaDelta;
     dst->foveaSigma    = src->foveaSigma;
     dst->foveaGazeFile = src->foveaGazeFile;
+
+    dst->fpsPrePulldownNum = src->fpsPrePulldownNum;
+    dst->fpsPrePulldownDenom = src->fpsPrePulldownDenom;
 }
 
 #ifdef SVT_HEVC
