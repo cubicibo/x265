@@ -1712,6 +1712,10 @@ typedef struct x265_param
      * */
     int       pictureStructure;
 
+    /*  FPS numerator and denominator prior to soft-telecinema process. */
+    uint32_t fpsPrePulldownNum;
+    uint32_t fpsPrePulldownDenom;
+
     struct
     {
         /* Explicit mode of rate-control, necessary for API users. It must
