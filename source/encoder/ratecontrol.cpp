@@ -300,6 +300,7 @@ RateControl::RateControl(x265_param& p, Encoder *top)
         m_param->rc.vbvMaxBitrate = 0;
     }
     m_isVbv = m_param->rc.vbvMaxBitrate > 0 && m_param->rc.vbvBufferSize > 0;
+    m_isVfr = m_param->rc.bVfrFlag;
     if (m_param->vbvBufferEnd && !m_isVbv)
     {
         x265_log(m_param, X265_LOG_WARNING, "vbv-end requires VBV parameters, ignored\n");
@@ -919,6 +920,9 @@ void RateControl::initHRD(SPS& sps)
     // Init HRD
     HRDInfo* hrd = &sps.vuiParameters.hrdParameters;
     hrd->cbrFlag = m_isCbr;
+    /* temporal layers can still advertise a non-fixed pic rate, see codeHrdParameters */
+    hrd->fixedPicRateFlag = !m_isVfr;
+
     if (m_param->reconfigWindowSize) {
         hrd->cbrFlag = 0;
         vbvMaxBitrate = m_param->decoderVbvMaxRate * 1000;
@@ -1413,8 +1417,8 @@ int RateControl::rateControlStart(Frame* curFrame, RateControlEntry* rce, Encode
         m_movingAvgFps = 1.0 / (weight * frameSecs + (1.0 - weight) / m_movingAvgFps);
     }
 
-    /* m_wantedBitsWindow is initialized based on the VUI timebase. the actual
-     * first frame duration is only known at this stage */
+    /* m_cplxrSum is seeded for one frame: seed the ABR window with the first frame's budget.
+     * That is one tick in CFR, the frame's actual duration with pic_struct pulldown or VFR. */
     if (m_isAbr && rce->encodeOrder == 0)
         m_wantedBitsWindow = m_bitrate * m_timebase * rce->frameDuration;
 
