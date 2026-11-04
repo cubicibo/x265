@@ -155,6 +155,7 @@ Encoder::Encoder()
     m_filmGrainIn = NULL;
     m_aomFilmGrainIn = NULL;
     m_naluFile = NULL;
+    m_vfrTimescalesIn = NULL;
     m_offsetEmergency = NULL;
     m_iFrameNum = 0;
     m_iPPSQpMinus26 = 0;
@@ -604,6 +605,16 @@ void Encoder::create()
 
     m_nalList.m_annexB = !!m_param->bAnnexB;
 
+    if (m_param->vfrTimescalesFile)
+    {
+        m_vfrTimescalesIn = new TimescaleInput(m_param->vfrTimescalesFile, m_param->fpsNum, m_param->fpsDenom);
+        if (m_vfrTimescalesIn->isFail())
+        {
+            x265_log_file(NULL, X265_LOG_ERROR, "%s file not found or failed to open\n", m_param->vfrTimescalesFile);
+            m_aborted = true;
+        }
+    }
+
     if (strlen(m_param->naluFile))
     {
         m_naluFile = x265_fopen(m_param->naluFile, "r");
@@ -1031,6 +1042,8 @@ void Encoder::destroy()
      }
     if (m_naluFile)
         fclose(m_naluFile);
+    delete m_vfrTimescalesIn;
+    m_vfrTimescalesIn = NULL;
     if (m_filmGrainIn)
         x265_fclose(m_filmGrainIn);
     if (m_aomFilmGrainIn)
@@ -1785,7 +1798,6 @@ int Encoder::encode(const x265_picture* pic_in, x265_picture* pic_out)
                 inFrame[layer]->m_timebase = ((double)inFrame[layer]->m_param->fpsDenom / (double)inFrame[layer]->m_param->fpsNum);
 
             inFrame[layer]->m_displayPicCount = m_clockTickCount;
-            inFrame[layer]->m_duration = g_deltaToDivisor[inFrame[layer]->m_picStruct];
 
             /*Copy reconfigured RC parameters to frame*/
             if (m_param->rc.rateControlMode == X265_RC_ABR)
@@ -1801,6 +1813,14 @@ int Encoder::encode(const x265_picture* pic_in, x265_picture* pic_out)
             /* Encoder holds a reference count until stats collection is finished */
             ATOMIC_INC(&inFrame[layer]->m_countRefEncoders);
         }
+
+        if (m_vfrTimescalesIn)
+            inFrame[0]->m_duration = m_vfrTimescalesIn->getFrameTicksDuration(inFrame[0]->m_sourcePoc);
+        else
+            inFrame[0]->m_duration = g_deltaToDivisor[inFrame[0]->m_picStruct];
+
+        for (int layer = 1; layer < m_param->numLayers; layer++)
+            inFrame[layer]->m_duration = inFrame[0]->m_duration;
 
         /* update presentation tick count */
         m_clockTickCount += inFrame[0]->m_duration;
@@ -4623,6 +4643,19 @@ void Encoder::configure(x265_param *p)
     {
         x265_log(p, X265_LOG_WARNING, "Cannot enforce a picture structure with Frame-duplication, ignoring the user picstruct.\n");
         p->pictureStructure = -1;
+    }
+
+    /* the timescales file is either a usable name or NULL: an empty name disables VFR.
+     * Must happen here, before create() runs initHRD() and opens the file. The string
+     * is owned by the caller, so the pointer is only dropped, not freed. */
+    if (p->vfrTimescalesFile && !p->vfrTimescalesFile[0])
+        p->vfrTimescalesFile = NULL;
+
+    if (p->vfrTimescalesFile && (p->bEnableFrameDuplication || p->pictureStructure >= 0))
+    {
+        x265_log(p, X265_LOG_WARNING, "Cannot use frame duplication or pic-struct with VFR. Disabling both.\n");
+        p->pictureStructure = -1;
+        p->bEnableFrameDuplication = 0;
     }
 
     if (m_param->bEnableFrameDuplication && (!bIsVbv || !m_param->bEmitHRDSEI))

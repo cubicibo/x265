@@ -455,6 +455,9 @@ namespace X265_NS {
         H0("\nSEI Message Options\n");
         H0("   --film-grain <filename>       File containing Film Grain Characteristics to be written as a SEI Message\n");
         H0("   --aom-film-grain <filename>   File containing Aom Film Grain Characteristics to be written as a SEI Message\n");
+        H0("   --timescales-file <filename>  VFR: per-line '<source POC> <fps>' (integer or num/den), rate kept until the next entry. Frame durations are in --fps ticks\n");
+        H0("                                 In VFR mode the VUI timescale is 10000/1. keyint values must take this into account.\n");
+
         H0("   --[no-]frame-rc              Enable configuring Rate Control parameters(QP, CRF or Bitrate) at frame level.Default 0\n"
            "                                Enable this option only when planning to invoke the API function x265_encoder_reconfig to configure Rate Control parameters\n");
 #undef OPT
@@ -507,6 +510,8 @@ namespace X265_NS {
 
         if (param && param->foveaGazeFile)
             free(param->foveaGazeFile);
+        if (param && param->vfrTimescalesFile)
+            free(param->vfrTimescalesFile);
 
         if (param && api)
         {
@@ -1009,12 +1014,21 @@ namespace X265_NS {
             }
         }
 
-            //TODO:Validate info params of both the views to equal values
+        //TODO:Validate info params of both the views to equal values
         /* Unconditionally accept height/width/csp/bitDepth from file info */
-            param->sourceWidth = info[0].width;
-            param->sourceHeight = info[0].height;
-            param->internalCsp = info[0].csp;
-            param->sourceBitDepth = info[0].depth;
+        param->sourceWidth = info[0].width;
+        param->sourceHeight = info[0].height;
+        param->internalCsp = info[0].csp;
+        param->sourceBitDepth = info[0].depth;
+
+        if (param->vfrTimescalesFile)
+        {
+            const bool nonZeroFps = param->fpsDenom > 0 || param->fpsNum > 0;
+            param->fpsNum = 1000;
+            param->fpsDenom = 1;
+            if (nonZeroFps)
+                x265_log(param, X265_LOG_WARNING, "VFR mode: ignoring --fps and forcing timescale to %u/%u.\n", param->fpsNum, param->fpsDenom);
+        }
 
         /* Accept fps and sar from file info if not specified by user */
         if (param->fpsDenom == 0 || param->fpsNum == 0)
