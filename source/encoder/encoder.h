@@ -34,6 +34,7 @@
 #include "svt.h"
 #include "temporalfilter.h"
 #include "threadedme.h"
+#include "input/timeinput.h"
 
 #ifdef ENABLE_HDR10_PLUS
     #include "dynamicHDR10/hdr10plus.h"
@@ -215,6 +216,7 @@ public:
     FILE*              m_analysisFileIn;
     FILE*              m_analysisFileOut;
     FILE*              m_naluFile;
+    TimeInput*         m_timeFile; /* time information file for VFR */
     x265_param*        m_paramBase[3];
     x265_param*        m_param;
     x265_param*        m_latestParam;     // Holds latest param during a reconfigure

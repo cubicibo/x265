@@ -2347,6 +2347,9 @@ typedef struct x265_param
     /* Aom Film Grain Characteristic file */
     char* aomFilmGrain;
 
+    /* timestamps or timescales file for VFR encoding. VFR if non-null */
+    char *timeInfoFile;
+
     /*Motion compensated temporal filter*/
     int      bEnableTemporalFilter;
     int      mcstfFrameRange;
@@ -2356,7 +2359,7 @@ typedef struct x265_param
     /* Threaded ME */
     /* Number of CTUs processed at once when a worker thread picks up a task from ThreadedME. */
     int      tmeTaskBlockSize;
-    
+
     /* Number of rows upto which ThreadedME processes tasks ahead of WPP */
     int      tmeNumBufferRows;
 
