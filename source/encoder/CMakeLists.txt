@@ -42,6 +42,7 @@ add_library(encoder OBJECT ../x265.h
     ratecontrol.cpp ratecontrol.h
     reference.cpp reference.h
     encoder.cpp encoder.h
+    timescales.cpp timescales.h
     api.cpp
     weightPrediction.cpp svt.h
     threadedme.h threadedme.cpp)
