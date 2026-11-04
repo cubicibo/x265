@@ -910,6 +910,9 @@ void RateControl::initHRD(SPS& sps)
     // Init HRD
     HRDInfo* hrd = &sps.vuiParameters.hrdParameters;
     hrd->cbrFlag = m_isCbr;
+    /* temporal layers can still advertise a non-fixed pic rate, see codeHrdParameters */
+    hrd->fixedPicRateFlag = m_param->timeInfoFile != NULL;
+
     if (m_param->reconfigWindowSize) {
         hrd->cbrFlag = 0;
         vbvMaxBitrate = m_param->decoderVbvMaxRate * 1000;
