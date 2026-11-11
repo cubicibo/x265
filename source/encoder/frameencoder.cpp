@@ -767,9 +767,12 @@ void FrameEncoder::compressFrame(int layer)
 
     m_rce.encodeOrder = m_frame[layer]->m_encodeOrder;
 
+    const VUI *vui = &slice->m_sps->vuiParameters;
+
     if (m_frame[layer]->m_lowres.bKeyframe)
     {
-        if (m_param->bEmitHRDSEI)
+        /* HRDSEI does not guarantee VBV configuration: test hrdParametersPresentFlag too */
+        if (m_param->bEmitHRDSEI && vui->hrdParametersPresentFlag)
         {
             SEIBufferingPeriod* bpSei = &m_top->m_rateControl->m_bufPeriodSEI;
 
@@ -795,11 +798,9 @@ void FrameEncoder::compressFrame(int layer)
         }
     }
 
-    if ((m_param->bEmitHRDSEI || !!m_param->interlaceMode))
+    if ((m_param->bEmitHRDSEI || vui->frameFieldInfoPresentFlag))
     {
         SEIPictureTiming *sei = m_rce.picTimingSEI;
-        const VUI *vui = &slice->m_sps->vuiParameters;
-        const HRDInfo *hrd = &vui->hrdParameters;
 
         if (vui->frameFieldInfoPresentFlag)
         {
@@ -831,6 +832,8 @@ void FrameEncoder::compressFrame(int layer)
 
         if (vui->hrdParametersPresentFlag)
         {
+            const HRDInfo *hrd = &vui->hrdParameters;
+
             /* The m_aucpbremoval delay specifies how many clock ticks the access unit
              * with the picture timing SEI message has to wait after removal of the
              * access unit with the most recent buffering period SEI message */

@@ -854,7 +854,6 @@ public:
     void writeSEI(const SPS& sps)
     {
         const VUI *vui = &sps.vuiParameters;
-        const HRDInfo *hrd = &vui->hrdParameters;
 
         if (vui->frameFieldInfoPresentFlag)
         {
@@ -865,6 +864,8 @@ public:
 
         if (vui->hrdParametersPresentFlag)
         {
+            const HRDInfo *hrd = &vui->hrdParameters;
+
             WRITE_CODE(m_auCpbRemovalDelay - 1, hrd->cpbRemovalDelayLength, "au_cpb_removal_delay_minus1");
             WRITE_CODE(m_picDpbOutputDelay, hrd->dpbOutputDelayLength, "pic_dpb_output_delay");
             /* Removed sub-pic signaling June 2014 */

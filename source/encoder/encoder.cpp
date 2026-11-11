@@ -3790,7 +3790,11 @@ void Encoder::initSPS(SPS *sps)
     vui.frameFieldInfoPresentFlag = !!m_param->interlaceMode || m_param->bEmitHRDSEI;
     vui.fieldSeqFlag = !!m_param->interlaceMode;
 
-    vui.hrdParametersPresentFlag = m_param->bEmitHRDSEI;
+    /* HRDSEI without VBV parameters only conveys basic picture info
+     * If VBV is also configured, then x265 shall convey all HRD information
+     * (Buffering Period, Pic Timing, and HRD parameters in the VUI) */
+    bool bIsVbv = m_param->rc.vbvBufferSize > 0 && m_param->rc.vbvMaxBitrate > 0;
+    vui.hrdParametersPresentFlag = m_param->bEmitHRDSEI && bIsVbv;
 
     vui.timingInfo.numUnitsInTick = m_param->fpsDenom;
     vui.timingInfo.timeScale = m_param->fpsNum;
@@ -4625,9 +4629,9 @@ void Encoder::configure(x265_param *p)
         p->pictureStructure = -1;
     }
 
-    if (m_param->bEnableFrameDuplication && (!bIsVbv || !m_param->bEmitHRDSEI))
+    if (m_param->bEnableFrameDuplication && !m_param->bEmitHRDSEI)
     {
-        x265_log(m_param, X265_LOG_WARNING, "Frame-duplication require NAL HRD and VBV parameters. Disabling frame duplication\n");
+        x265_log(m_param, X265_LOG_WARNING, "Frame-duplication require HRD Timing information. Disabling frame duplication\n");
         m_param->bEnableFrameDuplication = 0;
     }
 #ifdef ENABLE_HDR10_PLUS
