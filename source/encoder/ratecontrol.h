@@ -145,7 +145,7 @@ public:
     bool   m_initVbv;
     int    m_lastAbrResetPoc;
 
-    int    m_lastScenecut;
+    int64_t m_lastScenecut;           /* display tick of the last scenecut, -1 if none */
     int    m_lastScenecutAwareIFrame;
     double m_rateTolerance;
     double m_bitrate;
