@@ -289,9 +289,6 @@ If you wish to override the lookahead or rate control for a given
 picture you may specify a slicetype other than X265_TYPE_AUTO, or a
 forceQP value other than 0.
 
-With HRD, the Pic Timing SEI picture structure can be overriden per frame with
-**picStruct**. Refer to the PicStruct enumeration or ITU H.265 Table D.2.
-
 User SEI messages can be attached to a picture with **userSEI**. For a
 payload of type USER_DATA_UNREGISTERED, x265 by default writes its own
 UUID (2CA2DE09-B517-47DB-BB55-A4FE7FC2FC4E) in front of the payload. If
@@ -310,6 +307,26 @@ Structures allocated from the library should eventually be released::
 	 *  allocated by x265_picture_alloc() */
 	void x265_picture_free(x265_picture *);
 
+Frame rates modes
+=================
+
+x265 offers three different frame rates modes:
+- Constant frame rate (CFR, default)
+- Variable frame rate (VFR)
+- Fake VFR ("VFR-in-CFR"), exploiting soft-pulldown (requires HRD+VBV)
+
+CFR: the default mode, the frame rate is set by fpsNum/fpsDen.
+
+VFR-in-CFR: uses Pic Timing SEI picture structure marking (**picStruct**)
+to set the display duration per frame in a CFR bitstream at fpsNum/fpsDen
+rate. Refer to the PicStruct enumeration or ITU H.265 Table D.2.
+
+VFR: each picture specifies its own duration (**durationInTicks**). The
+encoder configuration shall have `bVfrFlag` set to true.
+The unit timebase (highest frame rate) is set via `fpsNum` and `fpsDen`.
+A single clock tick lasts fpsDen/fpsNum seconds.
+This value only steers the picture bit budgeting. With HRD+VBV, it also
+sets its display duration through the Pic Timing SEI.
 
 Analysis Buffers
 ================

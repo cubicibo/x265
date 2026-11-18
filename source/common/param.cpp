@@ -438,6 +438,9 @@ void x265_param_default(x265_param* param)
     /* Film grain characteristics model filename */
     param->filmGrain = NULL;
     param->aomFilmGrain = NULL;
+
+    param->rc.bVfrFlag = 0;
+
     param->bEnableSBRC = 0;
 
     /* Multi-View Encoding*/
@@ -1555,6 +1558,7 @@ int x265_param_parse(x265_param* p, const char* name, const char* value)
         OPT("fovea-delta") p->foveaDelta = (float)atof(value);
         OPT("fovea-sigma") p->foveaSigma = (float)atof(value);
         OPT("fovea-gaze-file") p->foveaGazeFile = strdup(value);
+        OPT("vfr") p->rc.bVfrFlag = atobool(value);
         else
             return X265_PARAM_BAD_NAME;
     }
@@ -2555,6 +2559,7 @@ char *x265_param2string(x265_param* p, int padx, int pady)
         s += snprintf(s, bufSize - (s - buf), " film-grain=%s", p->filmGrain); // Film grain characteristics model filename
     if (p->aomFilmGrain)
         s += snprintf(s, bufSize - (s - buf), " aom-film-grain=%s", p->aomFilmGrain);
+    BOOL(p->rc.bVfrFlag, "vfr");
     BOOL(p->bEnableTemporalFilter, "mcstf");
     if (p->bEnableTemporalFilter)
     {
@@ -3122,6 +3127,9 @@ void x265_copy_params(x265_param* dst, x265_param* src)
     dst->filmGrain = src->filmGrain;
     /* Aom Film grain*/
     dst->aomFilmGrain = src->aomFilmGrain;
+
+    dst->rc.bVfrFlag = src->rc.bVfrFlag;
+
     dst->bEnableSBRC = src->bEnableSBRC;
     dst->bConfigRCFrame = src->bConfigRCFrame;
     dst->isAbrLadderEnable = src->isAbrLadderEnable;

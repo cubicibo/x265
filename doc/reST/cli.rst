@@ -2613,6 +2613,8 @@ VUI fields must be manually specified.
     Cannot be used concurrently with :option:`--frame-dup`, :option:`--psfile`,
     :option:`--pic-struct`, :option:`--interlace` or :option:`--temporal-layers`.
 
+    **CLI ONLY**
+
 .. option:: --psfile <filename>
 
 	Specify a text file which contains the picture structure for some or all frames.
@@ -2633,6 +2635,23 @@ VUI fields must be manually specified.
 
     Cannot be used concurrently with :option:`--frame-dup`, :option:`--pic-struct`,
     :option:`--interlace`, :option:`--temporal-layers` or :option:`--prepulldown-fps`
+
+.. option:: --vfr-file <filename>
+
+    Specify a text file with timing information for each frame. Enables VFR encoding.
+
+    By default, x265 adopts a timebase of 1 millisecond (1000 fps). Different values
+    can be set via :option:`--fps`, which sets the time unit.
+
+    Two file formats are supported: timestamp v2, or timescale v1:
+    - A timestamp v2 file specifies the duration of every frame to encode.
+      Its header shall be `# timestamp format v2`.
+      Each line is a duration in milliseconds, represented as an integer or a float.
+
+    - A timescale v1 file lists sections and their respective frame rate.
+      Its header shall be `# timescale format v1`. Each line shall specify 2 values:
+      framenum (integer) framerate (integer|fraction)
+      A framerate is in force from framenum until overriden by a higher entry.
 
 .. option:: --video-signal-type-preset <string>
 
